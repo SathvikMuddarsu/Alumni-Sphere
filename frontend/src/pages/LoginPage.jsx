@@ -37,6 +37,30 @@ export default function LoginPage() {
     }
   };
 
+  const [demoLoadingRole, setDemoLoadingRole] = useState(null);
+
+  const DEMO_ACCOUNTS = [
+    { label: 'Student Demo', email: 'arjun@student.com', role: 'Student (CSE)', inst: 'IIT Madras' },
+    { label: 'Alumni Demo', email: 'priya@alumni.com', role: 'Staff Eng (Google)', inst: 'Alumni 2016' },
+    { label: 'IIT Student', email: 'aarav.sharma@student.edu', role: 'B.Tech AI', inst: 'IIT Bombay' },
+    { label: 'IIT Alumni', email: 'gaurav.kapoor@alumni.com', role: 'Principal (NVIDIA)', inst: 'IIT Delhi' },
+    { label: 'Executive Mentor', email: 'divya@alumni.com', role: 'Director (Meta)', inst: '12+ Yrs Exp' },
+    { label: 'Admin Demo', email: 'admin@alumnisphere.com', role: 'Platform Admin', inst: 'Superuser' },
+  ];
+
+  const handleQuickDemoLogin = async (email, label) => {
+    setDemoLoadingRole(label);
+    try {
+      await login(email, 'password123', true);
+      toast.success(`Logged in as ${label}`);
+      navigate('/dashboard');
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Demo login failed');
+    } finally {
+      setDemoLoadingRole(null);
+    }
+  };
+
   const fillDemo = (email) => {
     setForm({ email, password: 'password123' });
     setErrors({});
@@ -141,35 +165,42 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          {/* Quick Demo Logins */}
-          <div className="mt-6 p-4 rounded-2xl bg-primary-50/60 dark:bg-primary-950/40 border border-primary-100 dark:border-primary-900/30 text-xs">
-            <p className="font-semibold text-primary-800 dark:text-primary-300 mb-2 flex items-center gap-1">
-              <Info size={14} /> One-Click Demo Accounts:
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => fillDemo('admin@alumnisphere.com')}
-                className="py-1.5 px-2 rounded-lg bg-white dark:bg-dark-800 font-medium text-dark-800 dark:text-dark-200 hover:border-primary-500 border border-gray-200 dark:border-dark-700 transition-all text-center"
-              >
-                Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => fillDemo('priya@alumni.com')}
-                className="py-1.5 px-2 rounded-lg bg-white dark:bg-dark-800 font-medium text-dark-800 dark:text-dark-200 hover:border-primary-500 border border-gray-200 dark:border-dark-700 transition-all text-center"
-              >
-                Alumni (Google)
-              </button>
-              <button
-                type="button"
-                onClick={() => fillDemo('arjun@student.com')}
-                className="py-1.5 px-2 rounded-lg bg-white dark:bg-dark-800 font-medium text-dark-800 dark:text-dark-200 hover:border-primary-500 border border-gray-200 dark:border-dark-700 transition-all text-center"
-              >
-                Student (IIT)
-              </button>
+          {/* Quick One-Click Demo Logins */}
+          <div className="mt-6 p-4 rounded-2xl bg-primary-50/70 dark:bg-primary-950/40 border border-primary-100 dark:border-primary-900/40 text-xs shadow-sm">
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="font-semibold text-primary-800 dark:text-primary-300 flex items-center gap-1.5 text-xs">
+                <Info size={14} className="text-primary-600" /> One-Click Interactive Demo Logins:
+              </p>
+              <span className="text-[10px] text-gray-400 font-mono">pwd: password123</span>
             </div>
-            <p className="mt-2 text-center text-gray-400">Password for all demo accounts: <code>password123</code></p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {DEMO_ACCOUNTS.map((acc) => (
+                <button
+                  key={acc.email}
+                  type="button"
+                  disabled={loading || !!demoLoadingRole}
+                  onClick={() => handleQuickDemoLogin(acc.email, acc.label)}
+                  className={`p-2 rounded-xl bg-white dark:bg-dark-800 border text-left transition-all relative overflow-hidden group shadow-xs hover:border-primary-500 hover:shadow-md ${
+                    demoLoadingRole === acc.label
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                      : 'border-gray-200 dark:border-dark-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-1 mb-0.5">
+                    <p className="font-bold text-dark-900 dark:text-white text-[11px] truncate">{acc.label}</p>
+                    {demoLoadingRole === acc.label && (
+                      <span className="w-2.5 h-2.5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin shrink-0" />
+                    )}
+                  </div>
+                  <p className="text-[10px] text-primary-600 dark:text-primary-400 font-medium truncate">{acc.role}</p>
+                  <p className="text-[9px] text-gray-400 truncate">{acc.inst}</p>
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-center text-gray-400 text-[10px]">
+              Click any profile above to instantly authenticate with full platform privileges
+            </p>
           </div>
         </motion.div>
       </div>

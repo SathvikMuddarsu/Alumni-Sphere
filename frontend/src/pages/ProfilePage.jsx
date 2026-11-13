@@ -225,8 +225,8 @@ export default function ProfilePage() {
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Profile Header Hero Card */}
       <div className="glass rounded-3xl overflow-hidden shadow-glass border border-white/30 dark:border-dark-700/60">
-        {/* Cover Banner - Balanced height, never obscures profile info */}
-        <div className="h-32 sm:h-40 bg-gradient-primary relative overflow-hidden">
+        {/* Cover Banner - Compact, clean */}
+        <div className="h-28 sm:h-36 bg-gradient-primary relative">
           <div
             className="absolute inset-0 bg-white/10 opacity-25"
             style={{
@@ -236,116 +236,118 @@ export default function ProfilePage() {
           />
         </div>
 
-        {/* Profile Content Details */}
-        <div className="px-6 sm:px-8 pb-6">
-          {/* Top Row: Avatar overlapping banner edge on left, Action Buttons on right */}
-          <div className="flex items-end justify-between -mt-12 sm:-mt-14 mb-4 relative z-10">
-            {/* Round Avatar Container with White/Dark Ring */}
-            <div className="p-1.5 rounded-full bg-white dark:bg-dark-900 shadow-xl inline-block shrink-0">
+        {/* Profile Content Details - always BELOW cover, never overlapping */}
+        <div className="px-6 sm:px-8 pb-6 pt-0 relative">
+          {/* Avatar row: avatar overlaps upward into banner, everything else stays below */}
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-10 sm:-mt-12 relative z-10">
+            {/* Round Avatar Container */}
+            <div className="p-1.5 rounded-full bg-white dark:bg-dark-900 shadow-xl inline-block shrink-0 self-start">
               <Avatar src={profile.avatar} name={profile.name} size="2xl" />
             </div>
 
-            {/* Profile Action Buttons */}
-            <div className="flex flex-wrap items-center gap-2.5 pt-2">
-              {isOwnProfile ? (
-                <>
-                  <Button size="md" variant="primary" onClick={handleOpenEdit} className="shadow-md">
-                    <Edit3 size={15} /> Edit Profile
-                  </Button>
-                  <Button size="md" variant="secondary" onClick={() => setShowPasswordModal(true)}>
-                    <Key size={15} /> Password
-                  </Button>
-                </>
-              ) : (
-                <>
-                  {/* Functional Message Button */}
-                  <Link
-                    to={`/messages?userId=${profile._id}`}
-                    state={{ recipient: profile }}
-                  >
-                    <Button size="md" variant="primary" className="shadow-md">
-                      <MessageCircle size={15} /> Message
-                    </Button>
-                  </Link>
-
-                  {/* Connection Button */}
-                  {profile.isConnected ? (
-                    <span className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 shadow-sm">
-                      <Check size={14} /> Connected
+            {/* Name + Role + Buttons: all below the banner line */}
+            <div className="flex-1 min-w-0 pt-1 sm:pt-3">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                {/* Identity block */}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h1 className="text-2xl sm:text-3xl font-display font-bold text-dark-900 dark:text-white tracking-tight leading-tight">
+                      {profile.name}
+                    </h1>
+                    <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
+                      {profile.role}
                     </span>
-                  ) : profile.connectionStatus === 'pending_sent' ? (
-                    <span className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-dark-700 text-gray-500">
-                      Request Sent
-                    </span>
-                  ) : (
-                    <Button size="md" variant="secondary" onClick={handleConnectOther} loading={connectLoading}>
-                      <UserPlus size={15} /> Connect
-                    </Button>
-                  )}
+                  </div>
 
-                  {/* Mentorship Button (For Alumni) */}
-                  {profile.role === 'alumni' && (
-                    profile.mentorshipStatus === 'accepted' ? (
-                      <span className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
-                        <Check size={14} /> Active Mentor
-                      </span>
-                    ) : profile.mentorshipStatus === 'pending' ? (
-                      <span className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-dark-700 text-gray-500">
-                        Mentorship Pending
-                      </span>
-                    ) : (
-                      <Button size="md" variant="ghost" onClick={handleMentorOther} loading={mentorLoading}>
-                        <Target size={15} /> Request Mentorship
+                  <p className="text-gray-600 dark:text-dark-300 text-sm sm:text-base font-normal max-w-2xl mt-1">
+                    {profile.headline || `${profile.role === 'alumni' ? 'Alumni Mentor' : 'Student'} at AlumniSphere`}
+                  </p>
+                </div>
+
+                {/* Profile Action Buttons */}
+                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                  {isOwnProfile ? (
+                    <>
+                      <Button size="md" variant="primary" onClick={handleOpenEdit} className="shadow-md">
+                        <Edit3 size={15} /> Edit Profile
                       </Button>
-                    )
+                      <Button size="md" variant="secondary" onClick={() => setShowPasswordModal(true)}>
+                        <Key size={15} /> Password
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        to={`/messages?userId=${profile._id}`}
+                        state={{ recipient: profile }}
+                      >
+                        <Button size="md" variant="primary" className="shadow-md">
+                          <MessageCircle size={15} /> Message
+                        </Button>
+                      </Link>
+
+                      {profile.isConnected ? (
+                        <span className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 shadow-sm">
+                          <Check size={14} /> Connected
+                        </span>
+                      ) : profile.connectionStatus === 'pending_sent' ? (
+                        <span className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-dark-700 text-gray-500">
+                          Request Sent
+                        </span>
+                      ) : (
+                        <Button size="md" variant="secondary" onClick={handleConnectOther} loading={connectLoading}>
+                          <UserPlus size={15} /> Connect
+                        </Button>
+                      )}
+
+                      {profile.role === 'alumni' && (
+                        profile.mentorshipStatus === 'accepted' ? (
+                          <span className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                            <Check size={14} /> Active Mentor
+                          </span>
+                        ) : profile.mentorshipStatus === 'pending' ? (
+                          <span className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-dark-700 text-gray-500">
+                            Mentorship Pending
+                          </span>
+                        ) : (
+                          <Button size="md" variant="ghost" onClick={handleMentorOther} loading={mentorLoading}>
+                            <Target size={15} /> Request Mentorship
+                          </Button>
+                        )
+                      )}
+                    </>
                   )}
-                </>
-              )}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* User Identity, Role, Headline & Subtitle Information */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-2xl sm:text-3xl font-display font-bold text-dark-900 dark:text-white tracking-tight">
-                {profile.name}
-              </h1>
-              <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
-                {profile.role}
+          {/* Subtitle Tags: Location, Company, Course, Graduation Year */}
+          <div className="flex flex-wrap items-center gap-y-1.5 gap-x-5 mt-4 text-xs text-gray-500 dark:text-dark-400">
+            {profile.course && (
+              <span className="flex items-center gap-1.5 font-medium text-primary-600 dark:text-primary-400">
+                <GraduationCap size={15} /> {profile.course}
               </span>
-            </div>
-
-            <p className="text-gray-600 dark:text-dark-300 text-sm sm:text-base font-normal max-w-3xl">
-              {profile.headline || `${profile.role === 'alumni' ? 'Alumni Mentor' : 'Student'} at AlumniSphere`}
-            </p>
-
-            {/* Subtitle Tags: Location, Company, Course, Graduation Year */}
-            <div className="flex flex-wrap items-center gap-y-1.5 gap-x-5 pt-1 text-xs text-gray-500 dark:text-dark-400">
-              {profile.course && (
-                <span className="flex items-center gap-1.5 font-medium text-primary-600 dark:text-primary-400">
-                  <GraduationCap size={15} /> {profile.course}
-                </span>
-              )}
-              {profile.company && (
-                <span className="flex items-center gap-1.5">
-                  <Building size={14} /> {profile.company}
-                </span>
-              )}
-              {profile.location && (
-                <span className="flex items-center gap-1.5">
-                  <MapPin size={14} /> {profile.location}
-                </span>
-              )}
-              {profile.graduationYear && (
-                <span className="flex items-center gap-1.5">
-                  <Calendar size={14} /> Class of {profile.graduationYear}
-                </span>
-              )}
-            </div>
+            )}
+            {profile.company && (
+              <span className="flex items-center gap-1.5">
+                <Building size={14} /> {profile.company}
+              </span>
+            )}
+            {profile.location && (
+              <span className="flex items-center gap-1.5">
+                <MapPin size={14} /> {profile.location}
+              </span>
+            )}
+            {profile.graduationYear && (
+              <span className="flex items-center gap-1.5">
+                <Calendar size={14} /> Class of {profile.graduationYear}
+              </span>
+            )}
           </div>
 
           {/* Quick Metrics Bar */}
-          <div className="mt-5 pt-4 border-t border-gray-100 dark:border-dark-700/70 flex flex-wrap items-center gap-6 text-xs text-gray-500 dark:text-dark-400">
+          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-dark-700/70 flex flex-wrap items-center gap-6 text-xs text-gray-500 dark:text-dark-400">
             <span className="font-medium text-dark-900 dark:text-white">
               <strong className="text-primary-600 dark:text-primary-400 text-sm mr-1">
                 {profile.connections?.length || 0}
