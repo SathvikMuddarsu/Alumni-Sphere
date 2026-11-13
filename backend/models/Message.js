@@ -4,7 +4,13 @@ const messageSchema = new mongoose.Schema({
   sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   conversationId: { type: String, required: true },
-  content: { type: String, required: true },
+  content: { type: String, default: '' },
+  attachment: {
+    url: { type: String, default: null },
+    fileName: { type: String, default: null },
+    fileType: { type: String, default: null },
+    fileSize: { type: Number, default: null },
+  },
   read: { type: Boolean, default: false },
   delivered: { type: Boolean, default: false },
 }, { timestamps: true });

@@ -12,7 +12,9 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(() => {
+    return localStorage.getItem('token') || sessionStorage.getItem('token') || null;
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,9 +37,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email, password, rememberMe = true) => {
     const { data } = await api.post('/auth/login', { email, password });
-    localStorage.setItem('token', data.token);
+    
+    // Clear both first
+    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
+
+    if (rememberMe) {
+      localStorage.setItem('token', data.token);
+    } else {
+      sessionStorage.setItem('token', data.token);
+    }
+
     api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
     setToken(data.token);
     setUser(data.user);
@@ -57,15 +69,34 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
     setToken(null);
     setUser(null);
   };
 
-  const updateUser = (updatedUser) => setUser(updatedUser);
+  const changePassword = async (currentPassword, newPassword) => {
+    const { data } = await api.put('/auth/change-password', { currentPassword, newPassword });
+    toast.success(data.message || 'Password updated successfully!');
+    return data;
+  };
+
+  const updateUser = (updatedUser) => {
+    setUser(prev => ({ ...prev, ...updatedUser }));
+  };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateUser, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{
+      user,
+      token,
+      loading,
+      login,
+      register,
+      logout,
+      changePassword,
+      updateUser,
+      isAuthenticated: !!user,
+    }}>
       {children}
     </AuthContext.Provider>
   );

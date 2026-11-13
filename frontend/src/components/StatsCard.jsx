@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion';
-
 export default function StatsCard({ icon: Icon, label, value, trend, color = 'primary' }) {
   const colorMap = {
     primary: 'from-primary-500 to-primary-600',
@@ -9,17 +7,17 @@ export default function StatsCard({ icon: Icon, label, value, trend, color = 'pr
   };
 
   return (
-    <motion.div whileHover={{ y: -2, scale: 1.02 }} className="glass rounded-2xl p-5 card-hover">
+    <div className="glass rounded-2xl p-5 card-hover transform-gpu will-change-transform">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-500 dark:text-dark-400">{label}</p>
           <p className="text-2xl font-bold text-dark-900 dark:text-white mt-1">{value}</p>
           {trend && <p className="text-xs text-emerald-500 mt-1">↑ {trend}</p>}
         </div>
-        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colorMap[color]} flex items-center justify-center shadow-lg`}>
+        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colorMap[color] || colorMap.primary} flex items-center justify-center shadow-md`}>
           <Icon size={22} className="text-white" />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

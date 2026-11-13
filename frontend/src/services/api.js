@@ -5,9 +5,17 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach token from localStorage on startup
-const token = localStorage.getItem('token');
-if (token) api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+// Interceptor to always attach freshest token from either localStorage or sessionStorage
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // Response interceptor for error handling
 api.interceptors.response.use(
@@ -16,7 +24,9 @@ api.interceptors.response.use(
     const message = error.response?.data?.message || 'Something went wrong';
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      if (window.location.pathname !== '/login' && window.location.pathname !== '/' && window.location.pathname !== '/register') {
+      sessionStorage.removeItem('token');
+      const publicPaths = ['/login', '/', '/register'];
+      if (!publicPaths.includes(window.location.pathname)) {
         window.location.href = '/login';
       }
     }

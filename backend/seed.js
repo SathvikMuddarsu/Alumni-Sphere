@@ -1,19 +1,49 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 const User = require('./models/User');
 const Opportunity = require('./models/Opportunity');
 const MentorshipRequest = require('./models/MentorshipRequest');
+const ConnectionRequest = require('./models/ConnectionRequest');
+const Message = require('./models/Message');
+const Notification = require('./models/Notification');
 
 const seedData = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('Connected to MongoDB for seeding...');
+    const isForce = process.argv.includes('--force');
+    const isProduction = process.env.NODE_ENV === 'production';
 
-    // Clear existing data
-    await User.deleteMany({});
-    await Opportunity.deleteMany({});
-    await MentorshipRequest.deleteMany({});
+    if (isProduction && !isForce) {
+      console.warn('⚠️  WARNING: In production mode, seed script requires --force flag to prevent accidental data loss.');
+      console.log('Skipping seed to preserve production user accounts.');
+      process.exit(0);
+    }
+
+    if (!process.env.MONGO_URI) {
+      console.error('❌ MONGO_URI environment variable is not defined.');
+      process.exit(1);
+    }
+
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('Connected to MongoDB...');
+
+    const existingUsersCount = await User.countDocuments();
+    if (existingUsersCount > 0 && !isForce) {
+      console.log(`ℹ️  Found ${existingUsersCount} existing users in the database.`);
+      console.log('ℹ️  Safe mode: existing user data preserved. (Run with --force to overwrite)');
+      process.exit(0);
+    }
+
+    if (isForce) {
+      console.log('⚠️  --force detected: Purging existing collections...');
+      await User.deleteMany({});
+      await Opportunity.deleteMany({});
+      await MentorshipRequest.deleteMany({});
+      await ConnectionRequest.deleteMany({});
+      await Message.deleteMany({});
+      await Notification.deleteMany({});
+    }
+
+    console.log('🌱 Seeding initial demo accounts and opportunities...');
 
     const users = await User.create([
       // Admin
@@ -45,7 +75,7 @@ const seedData = async () => {
       { name: 'Meera Joshi', email: 'meera@student.com', password: 'password123', role: 'student', headline: 'Data Science Master\'s Student', skills: ['Python', 'Machine Learning', 'SQL', 'Statistics'], industry: 'Technology', course: 'M.S. Data Science', location: 'New York, USA', bio: 'Passionate about AI and big data analytics.', experience: 0, graduationYear: 2025 },
     ]);
 
-    console.log(`✅ Created ${users.length} users`);
+    console.log(`✅ Created ${users.length} demo users`);
 
     // Create opportunities
     const opps = await Opportunity.create([
@@ -62,31 +92,37 @@ const seedData = async () => {
 
     console.log(`✅ Created ${opps.length} opportunities`);
 
-    // Create some mentorship connections
+    // Create mentorship connections
     await MentorshipRequest.create([
-      { from: users[11]._id, to: users[1]._id, status: 'accepted', message: 'Hello Priya, I am a CSE student aiming for FAANG. Would love your guidance on DSA and React!' }, // Arjun (CSE) -> Priya (Google)
-      { from: users[12]._id, to: users[4]._id, status: 'accepted', message: 'Hi Rajesh! As a Mechanical engineering student at MIT, I deeply admire your work at Tesla. Could you share some insights on EV design?' }, // Rohan (Mech) -> Rajesh (Tesla)
-      { from: users[13]._id, to: users[6]._id, status: 'pending', message: 'Hi Amit, I am pursuing ECE and want to get into core hardware roles like Intel. Seeking your mentorship!' }, // Kavya (ECE) -> Amit (Intel)
-      { from: users[14]._id, to: users[5]._id, status: 'accepted', message: 'Dear Siddharth, I am studying Civil Engineering and would like to learn about project management in large construction firms like L&T.' }, // Tariq (Civil) -> Siddharth (L&T)
-      { from: users[15]._id, to: users[8]._id, status: 'pending', message: 'Hello Vikram, I am doing my Master\'s in Data Science and looking for tips to crack Amazon ML interviews.' }, // Meera (Data) -> Vikram (Amazon)
+      { from: users[11]._id, to: users[1]._id, status: 'accepted', message: 'Hello Priya, I am a CSE student aiming for FAANG. Would love your guidance on DSA and React!' },
+      { from: users[12]._id, to: users[4]._id, status: 'accepted', message: 'Hi Rajesh! As a Mechanical engineering student at MIT, I deeply admire your work at Tesla. Could you share some insights on EV design?' },
+      { from: users[13]._id, to: users[6]._id, status: 'pending', message: 'Hi Amit, I am pursuing ECE and want to get into core hardware roles like Intel. Seeking your mentorship!' },
+      { from: users[14]._id, to: users[5]._id, status: 'accepted', message: 'Dear Siddharth, I am studying Civil Engineering and would like to learn about project management in large construction firms like L&T.' },
+      { from: users[15]._id, to: users[8]._id, status: 'pending', message: 'Hello Vikram, I am doing my Master\'s in Data Science and looking for tips to crack Amazon ML interviews.' },
     ]);
 
-    // Add connections for accepted mentorships
+    // Create connection requests
+    await ConnectionRequest.create([
+      { from: users[11]._id, to: users[2]._id, status: 'pending', message: 'Hi Sneha, would love to connect with a fellow software developer!' },
+      { from: users[12]._id, to: users[6]._id, status: 'accepted', message: 'Hi Amit, glad to connect with you!' },
+    ]);
+
+    // Add connections
     await User.findByIdAndUpdate(users[11]._id, { $addToSet: { connections: [users[1]._id] } });
     await User.findByIdAndUpdate(users[1]._id, { $addToSet: { connections: [users[11]._id] } });
     
-    await User.findByIdAndUpdate(users[12]._id, { $addToSet: { connections: [users[4]._id] } });
+    await User.findByIdAndUpdate(users[12]._id, { $addToSet: { connections: [users[4]._id, users[6]._id] } });
     await User.findByIdAndUpdate(users[4]._id, { $addToSet: { connections: [users[12]._id] } });
+    await User.findByIdAndUpdate(users[6]._id, { $addToSet: { connections: [users[12]._id] } });
 
     await User.findByIdAndUpdate(users[14]._id, { $addToSet: { connections: [users[5]._id] } });
     await User.findByIdAndUpdate(users[5]._id, { $addToSet: { connections: [users[14]._id] } });
 
-    console.log('✅ Created mentorship requests and connections');
-    console.log('\n🎉 Seed complete! Sample logins:');
+    console.log('✅ Created mentorship and connection relations');
+    console.log('\n🎉 Seed complete! Demo accounts:');
     console.log('  Admin:   admin@alumnisphere.com / password123');
-    console.log('  Alumni (CSE):  priya@alumni.com / password123');
-    console.log('  Student (CSE): arjun@student.com / password123');
-    console.log('  Student (Mech): rohan@student.com / password123');
+    console.log('  Alumni:  priya@alumni.com / password123');
+    console.log('  Student: arjun@student.com / password123');
 
     process.exit(0);
   } catch (error) {

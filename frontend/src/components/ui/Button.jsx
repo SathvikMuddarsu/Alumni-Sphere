@@ -1,28 +1,24 @@
-import { motion } from 'framer-motion';
-
 const variants = {
   primary: 'gradient-btn',
-  secondary: 'bg-gray-100 dark:bg-dark-700 text-dark-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-dark-600 font-semibold transition-all duration-200',
-  outline: 'border-2 border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 font-semibold transition-all duration-200',
-  ghost: 'text-dark-600 dark:text-dark-300 hover:bg-gray-100 dark:hover:bg-dark-700 transition-all duration-200',
-  danger: 'bg-red-500 hover:bg-red-600 text-white font-semibold transition-all duration-200',
+  secondary: 'bg-gray-100 dark:bg-dark-700 text-dark-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-dark-600 font-semibold transition-colors duration-150',
+  outline: 'border-2 border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 font-semibold transition-colors duration-150',
+  ghost: 'text-dark-600 dark:text-dark-300 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors duration-150',
+  danger: 'bg-red-500 hover:bg-red-600 text-white font-semibold transition-colors duration-150',
 };
 
 const sizes = {
-  sm: 'px-3 py-1.5 text-sm rounded-lg',
-  md: 'px-5 py-2.5 text-sm rounded-xl',
-  lg: 'px-7 py-3.5 text-base rounded-xl',
+  sm: 'px-3 py-1.5 text-xs rounded-lg',
+  md: 'px-4 py-2 text-sm rounded-xl',
+  lg: 'px-6 py-3 text-base rounded-xl',
 };
 
 export default function Button({ children, variant = 'primary', size = 'md', loading, disabled, className = '', onClick, type = 'button', ...props }) {
   return (
-    <motion.button
-      whileHover={{ scale: disabled ? 1 : 1.02 }}
-      whileTap={{ scale: disabled ? 1 : 0.98 }}
+    <button
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
-      className={`${variants[variant]} ${sizes[size]} inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+      className={`${variants[variant] || variants.primary} ${sizes[size] || sizes.md} inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] transition-transform duration-100 ${className}`}
       {...props}
     >
       {loading && (
@@ -32,6 +28,6 @@ export default function Button({ children, variant = 'primary', size = 'md', loa
         </svg>
       )}
       {children}
-    </motion.button>
+    </button>
   );
 }

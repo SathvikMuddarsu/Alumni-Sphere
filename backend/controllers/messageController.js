@@ -19,6 +19,7 @@ exports.getConversations = async (req, res) => {
       { $group: {
         _id: '$conversationId',
         lastMessage: { $first: '$content' },
+        lastAttachment: { $first: '$attachment' },
         lastMessageAt: { $first: '$createdAt' },
         sender: { $first: '$sender' },
         receiver: { $first: '$receiver' },
@@ -30,17 +31,25 @@ exports.getConversations = async (req, res) => {
     ]);
 
     // Get the other user's info for each conversation
-    const conversations = await Promise.all(messages.map(async (msg) => {
+    const conversationsRaw = await Promise.all(messages.map(async (msg) => {
       const otherUserId = msg.sender.toString() === userId.toString() ? msg.receiver : msg.sender;
       const otherUser = await User.findById(otherUserId).select('name avatar headline role');
+      if (!otherUser) return null;
+      
+      const lastMessageText = (msg.lastMessage && msg.lastMessage.trim()) 
+        ? msg.lastMessage 
+        : (msg.lastAttachment?.fileName ? `📎 ${msg.lastAttachment.fileName}` : 'Attachment');
+
       return {
         conversationId: msg._id,
         user: otherUser,
-        lastMessage: msg.lastMessage,
+        lastMessage: lastMessageText,
         lastMessageAt: msg.lastMessageAt,
         unreadCount: msg.unreadCount,
       };
     }));
+
+    const conversations = conversationsRaw.filter(Boolean);
 
     res.json({ conversations });
   } catch (error) {
@@ -79,9 +88,17 @@ exports.getMessages = async (req, res) => {
 // @route   POST /api/messages
 exports.sendMessage = async (req, res) => {
   try {
-    const { receiver, content } = req.body;
-    if (!receiver || !content) {
-      return res.status(400).json({ message: 'Receiver and content are required' });
+    const { receiver, content, attachment } = req.body;
+    const hasContent = content && content.trim().length > 0;
+    const hasAttachment = attachment && attachment.url;
+
+    if (!receiver || (!hasContent && !hasAttachment)) {
+      return res.status(400).json({ message: 'Receiver and either text content or an attachment are required' });
+    }
+
+    // Validate attachment size if present (max 10MB)
+    if (hasAttachment && attachment.fileSize && attachment.fileSize > 10 * 1024 * 1024) {
+      return res.status(400).json({ message: 'Attachment file size exceeds maximum limit of 10MB' });
     }
 
     const conversationId = getConversationId(req.user._id.toString(), receiver);
@@ -90,16 +107,25 @@ exports.sendMessage = async (req, res) => {
       sender: req.user._id,
       receiver,
       conversationId,
-      content,
+      content: hasContent ? content.trim() : '',
+      attachment: hasAttachment
+        ? {
+            url: attachment.url,
+            fileName: attachment.fileName || 'file',
+            fileType: attachment.fileType || 'application/octet-stream',
+            fileSize: attachment.fileSize || 0,
+          }
+        : undefined,
     });
 
     const populated = await message.populate([
-      { path: 'sender', select: 'name avatar' },
-      { path: 'receiver', select: 'name avatar' },
+      { path: 'sender', select: 'name avatar role' },
+      { path: 'receiver', select: 'name avatar role' },
     ]);
 
     res.status(201).json({ message: populated });
   } catch (error) {
+    console.error('Send message error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
